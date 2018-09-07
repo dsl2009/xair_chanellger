@@ -7,7 +7,7 @@ import os
 flags = tf.app.flags
 
 #State your dataset directory
-flags.DEFINE_string('dataset_dir', 'D:/deep_learn_data/ai_chellenger/class_plant_step1/train', 'ss')
+flags.DEFINE_string('dataset_dir', '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/step1', 'ss')
 
 # The number of images in the validation set. You would have to know the total number of examples in advance. This is essentially your evaluation dataset.
 flags.DEFINE_float('validation_size', 0.0, 'Float: The proportion of examples in the dataset to be used for validation')
@@ -41,13 +41,13 @@ def main():
     validation_filenames = photo_filenames[:num_validation]
 
     # First, convert the training and validation sets.
-    '''
+
     
     _convert_dataset('train', training_filenames, class_names_to_ids,
                      dataset_dir = FLAGS.dataset_dir, tfrecord_filename = FLAGS.tfrecord_filename, _NUM_SHARDS = FLAGS.num_shards)
     _convert_dataset('validation', validation_filenames, class_names_to_ids,
                      dataset_dir = FLAGS.dataset_dir, tfrecord_filename = FLAGS.tfrecord_filename, _NUM_SHARDS = FLAGS.num_shards)
-    '''
+
     # Finally, write the labels file:
     labels_to_class_names = dict(zip(range(len(class_names)), class_names))
     print(labels_to_class_names)

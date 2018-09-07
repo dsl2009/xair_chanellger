@@ -44,9 +44,9 @@ def gen_step1():
                 shutil.copy(os.path.join(ig_dr,img_id),ndr)
 
 def gen_step2():
-    js = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/train/AgriculturalDisease_trainingset/AgriculturalDisease_train_annotations.json'
-    ig_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/train/AgriculturalDisease_trainingset/images'
-    am_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/step2'
+    js = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/valid/AgriculturalDisease_validationset/AgriculturalDisease_validation_annotations.json'
+    ig_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/valid/AgriculturalDisease_validationset/images'
+    am_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/step2_valid'
     label = json.loads(open('label.json').read())
 
     for x in json.loads(open(js).read()):
@@ -83,4 +83,4 @@ def gen_step3():
                 if not os.path.exists(ndr):
                     os.makedirs(ndr)
                 shutil.copy(os.path.join(ig_dr,img_id),ndr)
-gen_step3()
+gen_step2()

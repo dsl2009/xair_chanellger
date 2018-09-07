@@ -30,7 +30,7 @@ def show(data):
     plt.imshow(ig)
     plt.show()
 
-def run(trainr,validr,names,cls_name):
+def run(trainr,validr,name,cls_num,idx):
 
     imagenet_data = ImageFolder(trainr,
                                 transform=data_transforms['train'])
@@ -40,13 +40,13 @@ def run(trainr,validr,names,cls_name):
     test_data_loader = DataLoader(test_data, batch_size=8, shuffle=True)
     model = inception_v3(num_classes=1000, pretrained=None, aux_logits=False)
     model.load_state_dict(torch.load('/home/dsl/all_check/aichallenger/inception_v3_google-1a9a5a14.pth'), strict=False)
-    model.fc = nn.Linear(2048, 2)
+    model.fc = nn.Linear(2048, cls_num)
     model.cuda()
     state = {'learning_rate': 0.01, 'momentum': 0.9, 'decay': 0.0005}
     optimizer = torch.optim.SGD(model.parameters(), state['learning_rate'], momentum=state['momentum'],
                                 weight_decay=state['decay'], nesterov=True)
     state['label_ix'] = imagenet_data.class_to_idx
-    state['cls_name'] = cls_name
+    state['cls_name'] = name
     def train():
         model.train()
         loss_avg = 0.0
@@ -80,8 +80,8 @@ def run(trainr,validr,names,cls_name):
             print(state['test_accuracy'])
 
     best_accuracy = 0.0
-    for epoch in range(40):
-        if epoch in [20]:
+    for epoch in range(60):
+        if epoch in [30]:
             state['learning_rate'] *= 0.1
             for param_group in optimizer.param_groups:
                 param_group['lr'] = state['learning_rate']
@@ -90,8 +90,8 @@ def run(trainr,validr,names,cls_name):
         test()
         if state['test_accuracy'] > best_accuracy:
             best_accuracy = state['test_accuracy']
-            torch.save(model.state_dict(), os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/new_step3', names+'.pth'))
-        with open(os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/new_step3', names+'.json'),'w') as f:
+            torch.save(model.state_dict(), os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/new_step2', idx+'.pth'))
+        with open(os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/new_step2', idx+'.json'),'w') as f:
             f.write(json.dumps(state))
             f.flush()
         print(state)
@@ -100,12 +100,13 @@ def run(trainr,validr,names,cls_name):
             break
 
 if __name__ == '__main__':
-    labels = json.loads(open('step3_cls_id.json').read())
-    train_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/old/org/train/AgriculturalDisease_trainingset'
-    valid_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/old/org/valid/AgriculturalDisease_validationset'
-    for x in labels:
+
+    train_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/step2_train'
+    valid_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/step2_valid'
+    for idx,x in enumerate(os.listdir(train_dr)):
         if True:
-            name = labels[x]
-            rd = os.path.join(train_dr,name)
-            vd = os.path.join(valid_dr,name)
-            run(rd,vd,str(x),name)
+
+            rd = os.path.join(train_dr,x)
+            vd = os.path.join(valid_dr,x)
+            cls_nums = len(os.listdir(rd))
+            run(rd,vd,x,cls_nums, str(idx))
