@@ -3,6 +3,8 @@ from threading import Thread
 import socket
 import tensorflow as tf
 from nets import inception
+import shutil
+import os
 import cv2
 import numpy as np
 import json
@@ -11,7 +13,7 @@ from nets import inception_v3
 import glob
 #log_dir = '/home/dsl/all_check/log_nasa_sgd20'
 checkpoints_dir = '/home/dsl/all_check/pig/pig_nasa_dsl_final'
-labels_file = 'D:/deep_learn_data/ai_chellenger/class_plant_step1/train/labels.json'
+labels_file = 'labels.json'
 labels_to_name =  json.loads(open(labels_file).read())
 print(labels_to_name)
 from skimage import io
@@ -55,6 +57,7 @@ def native_build(image_size, path):
 
 def recongnizev3():
     image_size = 299
+    dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/valid_test'
     with tf.Graph().as_default():
         #with tf.device('/cpu:0'):
         processed_images = tf.placeholder(shape=(5,299,299,3),dtype=tf.float32)
@@ -67,20 +70,22 @@ def recongnizev3():
         right = 0
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
-            saver.restore(sess, './trained/model.ckpt-92969')
-            for s in glob.glob('D:/deep_learn_data/ai_chellenger/class_plant_step1/valid/*/*'):
+            saver.restore(sess, '/home/dsl/all_check/aichallenger/ai_chanellger/trained/model.ckpt-92969')
+            l1 = glob.glob('/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/org/valid/AgriculturalDisease_validationset/*/*.*')
+            l2 = glob.glob('/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/org/valid/AgriculturalDisease_validationset/*/*/*.*')
+            l1.extend(l2)
+            for s in l1:
                 pi = native_build(image_size, s)
                 np_image, pp = sess.run([processed_images, logits],feed_dict={processed_images:pi})
                 pp = np.sum(pp,axis=0)/5
                 sorted_inds = [i[0] for i in sorted(enumerate(-pp), key=lambda x: x[1])]
                 lbsnn = s.replace('\\','/').split('/')[-2]
+                name = labels_to_name[str(sorted_inds[0])]
+                step_dr = os.path.join(dr,name)
+                if not os.path.exists(step_dr):
 
-                total = total+1
-                if lbsnn == labels_to_name[str(sorted_inds[0])]:
-                    right = right+1
-                else:
-                    print(s, labels_to_name[str(sorted_inds[0])],labels_to_name[str(sorted_inds[1])])
-                print(right/total, right, total)
+                    os.makedirs(step_dr)
+                shutil.copy(s,step_dr)
 
 
 recongnizev3()
