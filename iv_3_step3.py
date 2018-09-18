@@ -9,6 +9,8 @@ from progressbar import *
 from matplotlib import pyplot as plt
 import numpy as np
 import json
+from torch.optim import lr_scheduler
+
 data_transforms = {
     'train': transforms.Compose([
         transforms.Resize(size=(480,320)),
@@ -47,6 +49,7 @@ def run(trainr,validr,names,cls_name):
                                 weight_decay=state['decay'], nesterov=True)
     state['label_ix'] = imagenet_data.class_to_idx
     state['cls_name'] = cls_name
+
     def train():
         model.train()
         loss_avg = 0.0
@@ -79,33 +82,37 @@ def run(trainr,validr,names,cls_name):
                 state['test_accuracy'] = correct / len(test_data_loader.dataset)
             print(state['test_accuracy'])
 
-    best_accuracy = 0.0
-    for epoch in range(40):
-        if epoch in [20]:
-            state['learning_rate'] *= 0.1
+    state['best_accuracy'] = 0.0
+    for epoch in range(30):
+        if epoch in [10,20]:
+            state['learning_rate'] *= 0.34
             for param_group in optimizer.param_groups:
                 param_group['lr'] = state['learning_rate']
         state['epoch'] = epoch
         train()
         test()
-        if state['test_accuracy'] > best_accuracy:
-            best_accuracy = state['test_accuracy']
-            torch.save(model.state_dict(), os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/new_step3', names+'.pth'))
-        with open(os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/new_step3', names+'.json'),'w') as f:
+        if state['test_accuracy'] >= state['best_accuracy']:
+            state['best_accuracy'] = state['test_accuracy']
+            torch.save(model.state_dict(), os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/iv_step3', names+'.pth'))
+        with open(os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/iv_step3', names+'.json'),'w') as f:
             f.write(json.dumps(state))
             f.flush()
         print(state)
-        print("Best accuracy: %f" % best_accuracy)
-        if best_accuracy == 1.0:
+        print("Best accuracy: %f" % state['best_accuracy'])
+        if state['best_accuracy'] == 1.0:
             break
 
 if __name__ == '__main__':
-    labels = json.loads(open('step3_cls_id.json').read())
-    train_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/old/org/train/AgriculturalDisease_trainingset'
-    valid_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/old/org/valid/AgriculturalDisease_validationset'
-    for x in labels:
-        if True:
-            name = labels[x]
-            rd = os.path.join(train_dr,name)
-            vd = os.path.join(valid_dr,name)
-            run(rd,vd,str(x),name)
+    train_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/step3/'
+    valid_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/step3_valid/'
+    for idx, x in enumerate(os.listdir(train_dr)):
+        fu_dr = os.path.join(train_dr,x)
+        fu_valid_dr = os.path.join(valid_dr,x)
+        if idx == 9:
+            for ii, k in enumerate(os.listdir(fu_dr)):
+                if ii==2:
+                    print(x)
+                    rd = os.path.join(fu_dr, k)
+                    vd = os.path.join(fu_valid_dr, k)
+                    cls_nums = len(os.listdir(rd))
+                    run(rd, vd, str(idx)+str(ii), k)

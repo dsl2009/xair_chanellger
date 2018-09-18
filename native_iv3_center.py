@@ -54,8 +54,8 @@ class Inception3(nn.Module):
         self.Mixed_7a = InceptionD(768)
         self.Mixed_7b = InceptionE(1280)
         self.Mixed_7c = InceptionE(2048)
-        self.fc = nn.Linear(2048, num_classes)
-
+        self.fc1 = nn.Linear(2048, 2)
+        self.fc2 = nn.Linear(2, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
@@ -122,11 +122,12 @@ class Inception3(nn.Module):
         # 1 x 1 x 2048
         x = x.view(x.size(0), -1)
         # 2048
-        x = self.fc(x)
+        x = self.fc1(x)
+        f = self.fc2(x)
         # 1000 (num_classes)
         if self.training and self.aux_logits:
             return x, aux
-        return x
+        return x, f
 
 
 class InceptionA(nn.Module):

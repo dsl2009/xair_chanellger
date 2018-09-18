@@ -14,35 +14,26 @@ import json
 import cv2
 import shutil
 lbs_b = {0:'一般',  1:'严重'}
-base_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/pred_step1'
-am = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/pred_step2'
 
+base_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/pred/'
 log = '/home/dsl/all_check/aichallenger/ai_chanellger/new_step3'
 trans = transforms.Compose([
-        transforms.Resize(299),
-        transforms.CenterCrop(299),
+        transforms.Resize(size=(480,320)),
         transforms.ToTensor(),
         transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
 
     ])
-
-l1 = ['/home/dsl/all_check/aichallenger/new/step2/樱桃.json', '/home/dsl/all_check/aichallenger/new/step2/桃子.json']
-#l1 = glob.glob('/home/dsl/all_check/aichallenger/new/step2/*.json')
-
-for x in l1:
+for x in glob.glob('/home/dsl/all_check/aichallenger/ai_chanellger/step3_c/*.json'):
     data = json.loads(open(x).read())
-    cls_name = x.split('/')[-1].split('.')[0]
+    cls_name = data['cls_name']
     label_ix = data['label_ix']
     print(cls_name)
     print(label_ix)
     print(len(label_ix))
 
     num_cls = len(label_ix)
-
-    model = inception_v3(num_classes=1000, pretrained=None, aux_logits=False)
-    model.fc1 = nn.Linear(2048, 2)
-    model.fc2 = nn.Linear(2, num_cls)
-    model.load_state_dict(torch.load(x.replace('.json', '.pth')), strict=True)
+    model = inception_v3(num_classes=num_cls, pretrained=None, aux_logits=False)
+    model.load_state_dict(torch.load(x.replace('.json', '.pth')), strict=False)
     model.cuda()
     model.eval()
 
@@ -51,7 +42,7 @@ for x in l1:
         nd[label_ix[l]] = l
     print(nd)
 
-    for k in glob.glob(os.path.join(base_dr,cls_name,'*.*')):
+    for k in glob.glob(os.path.join(base_dr,'*',cls_name,'*.*')):
         img = Image.open(k)
         ig = trans(img)
         ig = ig.unsqueeze(0)
@@ -61,12 +52,12 @@ for x in l1:
         pred = output.data.max(1)[1]
 
         pred_lb = pred.cpu().numpy()[0]
-
-        new_path = os.path.join(am, cls_name,nd[pred_lb])
+        nn_dr = '/'.join(k.split('/')[:-1])
+        new_path = os.path.join(nn_dr, nd[pred_lb])
         if not os.path.exists(new_path):
-            os.makedirs(new_path)
+            os.mkdir(new_path)
         try:
-            shutil.copy(k, new_path)
+            shutil.move(k, new_path)
         except:
             print(k)
 

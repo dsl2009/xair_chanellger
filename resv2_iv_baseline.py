@@ -1,4 +1,5 @@
-from native_iv3 import inception_v3
+from native_senet import se_resnext50_32x4d
+from native_riv2 import InceptionResNetV2
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
@@ -9,34 +10,20 @@ from progressbar import *
 from matplotlib import pyplot as plt
 import numpy as np
 import json
-from torch.optim import lr_scheduler
 data_transforms = {
     'train': transforms.Compose([
         transforms.Resize(size=(480,320)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
     'val': transforms.Compose([
-        transforms.Resize(size=(480,320)),
+        transforms.Resize(size=(480, 320)),
         transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
 }
-data_transforms1 = {
-    'train': transforms.Compose([
-        transforms.Resize(320),
-        transforms.CenterCrop(299),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
-    ]),
-    'val': transforms.Compose([
-        transforms.Resize(299),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
-    ]),
-}
+
 
 def show(data):
     ig = data.numpy()
@@ -53,16 +40,15 @@ def run(trainr,validr,name,cls_num,idx):
     test_data = ImageFolder(validr,
                             transform=data_transforms['val'])
     data_loader = DataLoader(imagenet_data, batch_size=8, shuffle=True)
-    test_data_loader = DataLoader(test_data, batch_size=1, shuffle=True)
-    model = inception_v3(num_classes=1000, pretrained=None, aux_logits=False)
-    model.load_state_dict(torch.load('/home/dsl/all_check/aichallenger/inception_v3_google-1a9a5a14.pth'), strict=False)
-    model.fc = nn.Linear(2048, cls_num)
+    test_data_loader = DataLoader(test_data, batch_size=2, shuffle=True)
+
+    model = se_resnext50_32x4d(num_classes=1000,pretrained=None)
+    model.load_state_dict(torch.load('/home/dsl/all_check/se_resnext50_32x4d-a260b3a4.pth'), strict=False)
+    model.last_linear = nn.Linear(2048, 61)
     model.cuda()
     state = {'learning_rate': 0.01, 'momentum': 0.9, 'decay': 0.0005}
     optimizer = torch.optim.SGD(model.parameters(), state['learning_rate'], momentum=state['momentum'],
                                 weight_decay=state['decay'], nesterov=True)
-
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=5)
     state['label_ix'] = imagenet_data.class_to_idx
     state['cls_name'] = name
     def train():
@@ -97,29 +83,28 @@ def run(trainr,validr,name,cls_num,idx):
                 state['test_accuracy'] = correct / len(test_data_loader.dataset)
             print(state['test_accuracy'])
 
-    state['best_accuracy'] = 0.0
+    best_accuracy = 0.0
     for epoch in range(60):
+        if epoch in [30]:
+            state['learning_rate'] *= 0.1
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = state['learning_rate']
         state['epoch'] = epoch
         train()
         test()
-        scheduler.step(state['test_loss'])
-        if state['test_accuracy'] > state['best_accuracy']:
-            state['best_accuracy'] = state['test_accuracy']
-            torch.save(model.state_dict(), os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/iv_step2', idx+'.pth'))
-        with open(os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/iv_step2', idx+'.json'),'w') as f:
+        if state['test_accuracy'] > best_accuracy:
+            best_accuracy = state['test_accuracy']
+            torch.save(model.state_dict(), os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/new_newstep2', idx+'.pth'))
+        with open(os.path.join('/home/dsl/all_check/aichallenger/ai_chanellger/new_newstep2', idx+'.json'),'w') as f:
             f.write(json.dumps(state))
             f.flush()
         print(state)
-        print("Best accuracy: %f" % state['best_accuracy'])
-        if state['best_accuracy'] == 1.0:
+        print("Best accuracy: %f" % best_accuracy)
+        if best_accuracy == 1.0:
             break
 
 if __name__ == '__main__':
-    train_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/step2_train'
-    valid_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/step2_valid'
-    for idx,x in enumerate(os.listdir(train_dr)):
-        if True:
-            rd = os.path.join(train_dr, x)
-            vd = os.path.join(valid_dr, x)
-            cls_nums = len(os.listdir(rd))
-            run(rd, vd, x, cls_nums, str(idx))
+
+    train_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/base_line'
+    valid_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/base_line_valid'
+    run(train_dr, valid_dr, 'total', 61, str(1))

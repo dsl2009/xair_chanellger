@@ -57,7 +57,7 @@ def native_build(image_size, path):
 
 def recongnizev3():
     image_size = 299
-    dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/valid_test'
+    dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/pred_step1'
     with tf.Graph().as_default():
         #with tf.device('/cpu:0'):
         processed_images = tf.placeholder(shape=(5,299,299,3),dtype=tf.float32)
@@ -71,9 +71,10 @@ def recongnizev3():
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             saver.restore(sess, '/home/dsl/all_check/aichallenger/ai_chanellger/trained/model.ckpt-92969')
-            l1 = glob.glob('/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/org/valid/AgriculturalDisease_validationset/*/*.*')
-            l2 = glob.glob('/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/org/valid/AgriculturalDisease_validationset/*/*/*.*')
-            l1.extend(l2)
+            l1 = glob.glob('/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/ai_challenger_pdr2018_testA_20180905/AgriculturalDisease_testA/images/*.*')
+            #l1 = glob.glob('/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/new/valid/AgriculturalDisease_validationset/images/*.*')
+
+
             for s in l1:
                 pi = native_build(image_size, s)
                 np_image, pp = sess.run([processed_images, logits],feed_dict={processed_images:pi})

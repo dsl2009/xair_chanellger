@@ -1,4 +1,4 @@
-from native_iv3 import inception_v3
+from native_iv3_center import inception_v3
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
@@ -31,10 +31,10 @@ data_transforms = {
 
 
 labels = json.loads(open('step2_cls_id.json').read())
-base_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/valid_test/'
-for x in glob.glob('/home/dsl/all_check/aichallenger/ai_chanellger/iv_step2/*.json'):
+base_dr = '/media/dsl/20d6b919-92e1-4489-b2be-a092290668e4/AIChallenger2018/pred'
+for x in glob.glob('/home/dsl/all_check/aichallenger/ai_chanellger/step2_center/*.json'):
     data = json.loads(open(x).read())
-    cls_name = data['cls_name']
+    cls_name = x.split('/')[-1].split('.')[0]
     label_ix = data['label_ix']
     print(label_ix)
     print(len(label_ix))
@@ -62,7 +62,7 @@ for x in glob.glob('/home/dsl/all_check/aichallenger/ai_chanellger/iv_step2/*.js
         ig = torch.from_numpy(img).float()
 
         ig = torch.autograd.Variable(ig.cuda())
-        output = model(ig)
+        fc1, output = model(ig)
         pred = output.data.max(1)[1]
         pred_lb = pred.cpu().numpy()[0]
         new_path = os.path.join(base_dr,cls_name,nd[pred_lb])
